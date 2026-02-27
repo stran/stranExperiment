@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>stranExperiment</title>
+  <style>
+    :root {
+      --orange: #cc785c;
+      --orange-dim: #99563e;
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --text: #e8e2db;
+      --muted: #666;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4rem 1.5rem 3rem;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .logo {
+      font-size: 2.6rem;
+      font-weight: bold;
+      letter-spacing: 0.08em;
+      color: var(--orange);
+      text-shadow: 0 0 24px rgba(204,120,92,0.35);
+      animation: glow 2.5s ease-in-out infinite alternate;
+    }
+
+    .logo span { color: var(--text); }
+
+    @keyframes glow {
+      from { text-shadow: 0 0 12px rgba(204,120,92,0.2); }
+      to   { text-shadow: 0 0 32px rgba(204,120,92,0.55); }
+    }
+
+    .tagline {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* Decorative divider */
+    .divider {
+      margin: 1.5rem auto 0;
+      width: 120px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--orange), transparent);
+      opacity: 0.5;
+    }
+
+    /* ── Grid ────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    /* ── Card ────────────────────────────────────────────── */
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem 1.75rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(204,120,92,0.06) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--orange-dim);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(204,120,92,0.12);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.9rem;
+      line-height: 1;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--orange);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .card-arrow {
+      align-self: flex-end;
+      margin-top: 1.2rem;
+      font-size: 0.75rem;
+      color: var(--orange-dim);
+      letter-spacing: 0.1em;
+      transition: color 0.2s, letter-spacing 0.2s;
+    }
+
+    .card:hover .card-arrow {
+      color: var(--orange);
+      letter-spacing: 0.2em;
+    }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      margin-top: 4rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-align: center;
+    }
+
+    footer a { color: var(--orange-dim); text-decoration: none; }
+    footer a:hover { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">stran<span>Experiment</span></div>
+    <p class="tagline">A collection of experiments &amp; demos</p>
+    <div class="divider"></div>
+  </header>
+
+  <main class="grid">
+
+    <a href="dance.html" class="card">
+      <div class="card-icon">🕺</div>
+      <div class="card-title">Claude Dances</div>
+      <p class="card-desc">
+        An ASCII-art Claude character busting moves under a spinning disco ball
+        with light beams and floating music notes.
+      </p>
+      <span class="card-arrow">open →</span>
+    </a>
+
+    <!-- Add new resource cards below this comment -->
+
+  </main>
+
+  <footer>
+    <p>stranExperiment &mdash; powered by <a href="https://anthropic.com" target="_blank" rel="noopener">Anthropic</a></p>
+  </footer>
+
+</body>
+</html>
