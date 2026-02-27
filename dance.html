@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Dances!</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d0d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: monospace;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #cc785c;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      letter-spacing: 0.15em;
+      animation: pulse 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.7; text-shadow: 0 0 8px #cc785c44; }
+      to   { opacity: 1.0; text-shadow: 0 0 20px #cc785caa; }
+    }
+
+    /* Stage */
+    .stage {
+      position: relative;
+      width: 420px;
+      height: 420px;
+    }
+
+    /* Disco ball */
+    .disco-ball {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff 5%, #aaa 30%, #555 70%, #222 100%);
+      box-shadow: 0 0 20px 6px rgba(200,200,255,0.4);
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: translateX(-50%) rotate(0deg); }
+      to   { transform: translateX(-50%) rotate(360deg); }
+    }
+
+    /* Disco light beams */
+    .beams {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+
+    .beam {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 100%;
+      transform-origin: top center;
+      animation: sweep 3s ease-in-out infinite alternate;
+      opacity: 0.15;
+    }
+
+    .beam:nth-child(1) { background: linear-gradient(to bottom, #ff4466, transparent); transform: rotate(-40deg); animation-delay: 0s; }
+    .beam:nth-child(2) { background: linear-gradient(to bottom, #44aaff, transparent); transform: rotate(-20deg); animation-delay: 0.3s; }
+    .beam:nth-child(3) { background: linear-gradient(to bottom, #aaff44, transparent); transform: rotate(0deg);  animation-delay: 0.6s; }
+    .beam:nth-child(4) { background: linear-gradient(to bottom, #ffaa00, transparent); transform: rotate(20deg); animation-delay: 0.9s; }
+    .beam:nth-child(5) { background: linear-gradient(to bottom, #dd44ff, transparent); transform: rotate(40deg); animation-delay: 1.2s; }
+
+    @keyframes sweep {
+      from { opacity: 0.08; }
+      to   { opacity: 0.28; }
+    }
+
+    /* Claude character */
+    .claude {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: bounce 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateX(-50%) translateY(0px) rotate(-4deg); }
+      to   { transform: translateX(-50%) translateY(-18px) rotate(4deg); }
+    }
+
+    pre {
+      color: #cc785c;
+      font-size: 1.1rem;
+      line-height: 1.3;
+      text-align: center;
+      white-space: pre;
+      filter: drop-shadow(0 0 6px #cc785c88);
+    }
+
+    /* Arms animate separately */
+    .arm-left  { display: inline-block; animation: arm-left  0.5s ease-in-out infinite alternate; transform-origin: top right; }
+    .arm-right { display: inline-block; animation: arm-right 0.5s ease-in-out infinite alternate; transform-origin: top left; }
+
+    @keyframes arm-left {
+      from { transform: rotate(30deg); }
+      to   { transform: rotate(-30deg); }
+    }
+    @keyframes arm-right {
+      from { transform: rotate(-30deg); }
+      to   { transform: rotate(30deg); }
+    }
+
+    /* Feet */
+    .feet { animation: feet 0.5s steps(2) infinite; }
+    @keyframes feet {
+      0%   { letter-spacing: 0.3em; }
+      50%  { letter-spacing: -0.1em; }
+      100% { letter-spacing: 0.3em; }
+    }
+
+    /* Floor */
+    .floor {
+      position: absolute;
+      bottom: 30px;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #cc785c55, #cc785c, #cc785c55, transparent);
+      animation: floor-glow 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes floor-glow {
+      from { box-shadow: 0 0 8px  #cc785c44; opacity: 0.6; }
+      to   { box-shadow: 0 0 20px #cc785caa; opacity: 1.0; }
+    }
+
+    /* Music notes */
+    .notes-container {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+
+    .note {
+      position: absolute;
+      font-size: 1.4rem;
+      color: #cc785c;
+      opacity: 0;
+      animation: float-note 2.5s ease-in-out infinite;
+    }
+
+    .note:nth-child(1) { left: 15%; animation-delay: 0.0s; }
+    .note:nth-child(2) { left: 30%; animation-delay: 0.6s; }
+    .note:nth-child(3) { left: 65%; animation-delay: 1.1s; }
+    .note:nth-child(4) { left: 80%; animation-delay: 1.8s; }
+    .note:nth-child(5) { left: 48%; animation-delay: 2.3s; }
+
+    @keyframes float-note {
+      0%   { bottom: 80px;  opacity: 0;   transform: translateX(0)    scale(0.7); }
+      20%  { opacity: 0.9; }
+      80%  { opacity: 0.6; }
+      100% { bottom: 360px; opacity: 0;   transform: translateX(20px) scale(1.2); }
+    }
+
+    /* Caption */
+    .caption {
+      margin-top: 2.5rem;
+      color: #888;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      animation: pulse 1.5s ease-in-out infinite alternate;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>♪ Claude is Dancing! ♪</h1>
+
+  <div class="stage">
+    <!-- Disco ball -->
+    <div class="disco-ball"></div>
+
+    <!-- Light beams -->
+    <div class="beams">
+      <div class="beam"></div>
+      <div class="beam"></div>
+      <div class="beam"></div>
+      <div class="beam"></div>
+      <div class="beam"></div>
+    </div>
+
+    <!-- Floating music notes -->
+    <div class="notes-container">
+      <span class="note">♪</span>
+      <span class="note">♫</span>
+      <span class="note">♩</span>
+      <span class="note">♬</span>
+      <span class="note">♪</span>
+    </div>
+
+    <!-- Claude ASCII character -->
+    <div class="claude">
+      <pre id="claude-art"></pre>
+    </div>
+
+    <!-- Floor -->
+    <div class="floor"></div>
+  </div>
+
+  <p class="caption">Powered by Anthropic ✦ Never stops dancing</p>
+
+  <script>
+    // Two animation frames that alternate
+    const frames = [
+      // Frame A — arms up-left / legs spread
+      [
+        "   .-\"\"-.   ",
+        "  /  CC  \\  ",
+        " | ~~~~~~ | ",
+        "  \\  __  /  ",
+        "   '----'   ",
+        " \\  (  )  / ",
+        "  \\_|  |_/  ",
+        "  /|  |\\   ",
+        " / |  | \\  ",
+        "   /    \\   ",
+      ],
+      // Frame B — arms down-right / legs together
+      [
+        "   .-\"\"-.   ",
+        "  /  CC  \\  ",
+        " | ~~~~~~ | ",
+        "  \\  __  /  ",
+        "   '----'   ",
+        " /  (  )  \\ ",
+        "  /_|  |_\\  ",
+        "    |  |    ",
+        "   /|  |\\  ",
+        "  / |  | \\ ",
+      ],
+    ];
+
+    let frame = 0;
+    const art = document.getElementById("claude-art");
+
+    setInterval(() => {
+      art.textContent = frames[frame].join("\n");
+      frame = 1 - frame;
+    }, 500);
+
+    // Initialise
+    art.textContent = frames[0].join("\n");
+  </script>
+</body>
+</html>
