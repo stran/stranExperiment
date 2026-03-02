@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillGraph — Track Your Learning</title>
+  <style>
+    /* ── Design Tokens ──────────────────────────────────────── */
+    :root {
+      --bg:          #07090f;
+      --bg-mid:      #0d1117;
+      --bg-high:     #111827;
+      --surface:     rgba(255,255,255,0.04);
+      --surface-hov: rgba(255,255,255,0.07);
+      --border:      rgba(255,255,255,0.08);
+      --border-hov:  rgba(99,179,237,0.4);
+      --accent:      #63b3ed;
+      --accent-dim:  rgba(99,179,237,0.18);
+      --accent-glow: rgba(99,179,237,0.35);
+      --cyan:        #67e8f9;
+      --violet:      #a78bfa;
+      --rose:        #fb7185;
+      --emerald:     #34d399;
+      --amber:       #fbbf24;
+      --text:        #e2e8f0;
+      --text-mid:    #94a3b8;
+      --text-dim:    #475569;
+      --radius:      12px;
+      --radius-sm:   8px;
+      --blur:        16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Geometric background grid ──────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99,179,237,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,179,237,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ambient orbs */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -20%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(99,179,237,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb-2 {
+      position: fixed;
+      bottom: -15%;
+      left: -5%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(167,139,250,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout shell ───────────────────────────────────────── */
+    .app {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      grid-template-rows: 64px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Top Nav ────────────────────────────────────────────── */
+    .nav {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      gap: 2rem;
+      background: rgba(7,9,15,0.8);
+      backdrop-filter: blur(var(--blur));
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .logo-text {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+
+    .logo-text span { color: var(--accent); }
+
+    .nav-pills {
+      display: flex;
+      gap: 4px;
+      margin-left: 1rem;
+    }
+
+    .nav-pill {
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-pill:hover, .nav-pill.active {
+      background: var(--surface-hov);
+      color: var(--text);
+    }
+
+    .nav-pill.active { color: var(--accent); }
+
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.78rem;
+    }
+
+    .nav-stat-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 6px var(--emerald);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--violet));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      border: 1.5px solid var(--border-hov);
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .sidebar {
+      background: rgba(13,17,23,0.6);
+      backdrop-filter: blur(var(--blur));
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .sidebar-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 0 8px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.83rem;
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+
+    .sidebar-item:hover, .sidebar-item.active {
+      background: var(--surface-hov);
+      color: var(--text);
+    }
+
+    .sidebar-item.active {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .sidebar-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      height: 60%;
+      width: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .sidebar-icon {
+      width: 16px;
+      text-align: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: var(--surface-hov);
+      color: var(--text-dim);
+    }
+
+    /* Category color dots */
+    .cat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Progress mini bar */
+    .sidebar-progress {
+      height: 2px;
+      background: var(--surface-hov);
+      border-radius: 2px;
+      margin: 2px 10px 0;
+      overflow: hidden;
+    }
+
+    .sidebar-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    /* ── Main Content ────────────────────────────────────────── */
+    .main {
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    /* ── Page header ─────────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .page-title span {
+      background: linear-gradient(90deg, var(--accent), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-sub {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: var(--text-mid);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #07090f;
+    }
+
+    .btn-primary:hover {
+      background: #90c9f5;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--text-mid);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-hov);
+      color: var(--text);
+    }
+
+    /* ── KPI Row ────────────────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .kpi {
+      background: var(--surface);
+      backdrop-filter: blur(var(--blur));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .kpi:hover {
+      border-color: var(--border-hov);
+      box-shadow: 0 0 24px rgba(99,179,237,0.08);
+    }
+
+    /* Geometric corner accent */
+    .kpi::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 48px;
+      height: 48px;
+      border-top: 2px solid;
+      border-right: 2px solid;
+      border-color: inherit;
+      border-top-right-radius: var(--radius);
+      opacity: 0.3;
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .kpi-change {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kpi-change.up   { color: var(--emerald); }
+    .kpi-change.down { color: var(--rose); }
+
+    /* ── Section label row ───────────────────────────────────── */
+    .section-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Filter chips ────────────────────────────────────────── */
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 5px 13px;
+      border-radius: 20px;
+      font-size: 0.77rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-mid);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip:hover { background: var(--surface-hov); color: var(--text); }
+
+    .chip.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Skill Grid ──────────────────────────────────────────── */
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Skill Card ──────────────────────────────────────────── */
+    .skill-card {
+      background: var(--surface);
+      backdrop-filter: blur(var(--blur));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .skill-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--card-color, rgba(99,179,237,0.05)) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .skill-card:hover {
+      border-color: var(--card-border, var(--border-hov));
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--card-shadow, rgba(99,179,237,0.1));
+    }
+
+    .skill-card:hover::before { opacity: 1; }
+
+    /* Geometric top-right corner bracket */
+    .skill-card::after {
+      content: '';
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 20px;
+      height: 20px;
+      border-top: 1.5px solid var(--card-accent, var(--accent));
+      border-right: 1.5px solid var(--card-accent, var(--accent));
+      opacity: 0.4;
+      transition: opacity 0.2s, width 0.2s, height 0.2s;
+    }
+
+    .skill-card:hover::after {
+      opacity: 0.9;
+      width: 24px;
+      height: 24px;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      background: var(--card-icon-bg, rgba(99,179,237,0.12));
+      border: 1px solid var(--card-icon-border, rgba(99,179,237,0.2));
+      flex-shrink: 0;
+    }
+
+    .card-meta { text-align: right; }
+
+    .card-level {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--card-level-bg, rgba(99,179,237,0.15));
+      color: var(--card-accent, var(--accent));
+    }
+
+    .card-xp {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .card-name {
+      font-size: 0.98rem;
+      font-weight: 600;
+      margin-bottom: 3px;
+      letter-spacing: -0.01em;
+    }
+
+    .card-category {
+      font-size: 0.73rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-bottom: 10px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--card-accent, var(--accent)), var(--card-accent2, var(--cyan)));
+      box-shadow: 0 0 8px var(--card-glow, var(--accent-glow));
+      transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .card-last {
+      font-size: 0.71rem;
+      color: var(--text-dim);
+    }
+
+    .card-streak {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.71rem;
+      color: var(--amber);
+    }
+
+    /* ── Featured wide card ──────────────────────────────────── */
+    .skill-card.wide {
+      grid-column: span 2;
+    }
+
+    .wide-inner {
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 1.5rem;
+    }
+
+    .wide-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .wide-chart-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .activity-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .activity-day {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      width: 24px;
+      text-align: right;
+    }
+
+    .activity-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .activity-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+    }
+
+    .activity-val {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      width: 28px;
+    }
+
+    /* Radar hexagon shape (CSS only) */
+    .hex-chart {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .hex-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    .hex-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 28px);
+      grid-template-rows: repeat(3, 28px);
+      gap: 3px;
+    }
+
+    .hex-cell {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 600;
+    }
+
+    /* ── Progress overview panel ─────────────────────────────── */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      backdrop-filter: blur(var(--blur));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* Week heatmap */
+    .heatmap {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .heat-day-label {
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    .heat-cell {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: rgba(99,179,237,0.06);
+      transition: background 0.15s;
+    }
+
+    .heat-cell[data-level="1"] { background: rgba(99,179,237,0.15); }
+    .heat-cell[data-level="2"] { background: rgba(99,179,237,0.3);  }
+    .heat-cell[data-level="3"] { background: rgba(99,179,237,0.55); }
+    .heat-cell[data-level="4"] { background: rgba(99,179,237,0.85); }
+
+    /* Achievement list */
+    .achievement-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .achievement {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-hov);
+      border: 1px solid var(--border);
+      transition: border-color 0.15s;
+    }
+
+    .achievement:hover { border-color: var(--border-hov); }
+
+    .achievement-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .achievement-info { flex: 1; }
+
+    .achievement-name {
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 1px;
+    }
+
+    .achievement-desc {
+      font-size: 0.71rem;
+      color: var(--text-dim);
+    }
+
+    .achievement-xp {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--amber);
+    }
+
+    /* ── Typography grid ruler (decorative) ─────────────────── */
+    .type-ruler {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      overflow: hidden;
+      margin-bottom: 1.75rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative;
+    }
+
+    .type-ruler::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--violet));
+      border-radius: 3px 0 0 3px;
+    }
+
+    .ruler-item {
+      flex: 1;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--text-dim);
+    }
+
+    .ruler-item:nth-child(1) { font-size: 0.6rem; }
+    .ruler-item:nth-child(2) { font-size: 0.75rem; }
+    .ruler-item:nth-child(3) { font-size: 0.9rem; color: var(--text-mid); }
+    .ruler-item:nth-child(4) { font-size: 1.1rem; color: var(--text-mid); }
+    .ruler-item:nth-child(5) { font-size: 1.4rem; color: var(--text); }
+    .ruler-item:nth-child(6) { font-size: 1.8rem; color: var(--accent); }
+    .ruler-item:nth-child(7) { font-size: 2.4rem; color: var(--accent); opacity: 0.6; }
+
+    .ruler-label {
+      font-size: 0.6rem;
+      font-weight: 400;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: block;
+    }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .skill-card.wide { grid-column: span 1; }
+      .wide-inner { grid-template-columns: 1fr; }
+      .overview-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 540px) {
+      .kpi-row { grid-template-columns: 1fr 1fr; }
+      .nav-pills { display: none; }
+    }
+
+    /* ── Utility ────────────────────────────────────────────── */
+    .mt-1 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<div class="orb-2"></div>
+
+<div class="app">
+
+  <!-- ── NAV ─────────────────────────────────────────────────── -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="13" height="13" rx="2" fill="rgba(99,179,237,0.15)" stroke="#63b3ed" stroke-width="1.5"/>
+          <rect x="18" y="1" width="13" height="13" rx="2" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="1.5"/>
+          <rect x="1" y="18" width="13" height="13" rx="2" fill="rgba(52,211,153,0.15)" stroke="#34d399" stroke-width="1.5"/>
+          <rect x="18" y="18" width="13" height="13" rx="2" fill="rgba(251,191,36,0.15)" stroke="#fbbf24" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <span class="logo-text">Skill<span>Graph</span></span>
+    </a>
+
+    <div class="nav-pills">
+      <div class="nav-pill active">Dashboard</div>
+      <div class="nav-pill">Skills</div>
+      <div class="nav-pill">Sessions</div>
+      <div class="nav-pill">Goals</div>
+    </div>
+
+    <div class="nav-right">
+      <div class="nav-stat">
+        <div class="nav-stat-dot"></div>
+        <span>12-day streak</span>
+      </div>
+      <div class="avatar">JD</div>
+    </div>
+  </nav>
+
+  <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <div class="sidebar-item active">
+        <span class="sidebar-icon">⊞</span> Dashboard
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">◈</span> My Skills
+        <span class="sidebar-badge">24</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">◷</span> Sessions
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">◎</span> Goals
+        <span class="sidebar-badge">3</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Categories</div>
+
+      <div class="sidebar-item">
+        <div class="cat-dot" style="background:#63b3ed"></div>
+        Programming
+        <span class="sidebar-badge">8</span>
+      </div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-fill" style="width:72%;background:#63b3ed"></div>
+      </div>
+
+      <div class="sidebar-item">
+        <div class="cat-dot" style="background:#a78bfa"></div>
+        Design
+        <span class="sidebar-badge">5</span>
+      </div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-fill" style="width:55%;background:#a78bfa"></div>
+      </div>
+
+      <div class="sidebar-item">
+        <div class="cat-dot" style="background:#34d399"></div>
+        Writing
+        <span class="sidebar-badge">4</span>
+      </div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-fill" style="width:40%;background:#34d399"></div>
+      </div>
+
+      <div class="sidebar-item">
+        <div class="cat-dot" style="background:#fbbf24"></div>
+        Music
+        <span class="sidebar-badge">4</span>
+      </div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-fill" style="width:30%;background:#fbbf24"></div>
+      </div>
+
+      <div class="sidebar-item">
+        <div class="cat-dot" style="background:#fb7185"></div>
+        Language
+        <span class="sidebar-badge">3</span>
+      </div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-fill" style="width:25%;background:#fb7185"></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tools</div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">⊕</span> Add Skill
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">⊘</span> Import
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-icon">⚙</span> Settings
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ──────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Your <span>Learning Graph</span></h1>
+        <p class="page-sub">Monday, March 2 · Week 9 of 52</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost">⊞ View All</button>
+        <button class="btn btn-primary">+ Log Session</button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="kpi-row">
+      <div class="kpi" style="border-color: rgba(99,179,237,0.2);">
+        <div class="kpi-label">Skills Active</div>
+        <div class="kpi-value" style="color:var(--accent)">24</div>
+        <div class="kpi-change up">↑ 3 this month</div>
+      </div>
+      <div class="kpi" style="border-color: rgba(167,139,250,0.2);">
+        <div class="kpi-label">Hours Logged</div>
+        <div class="kpi-value" style="color:var(--violet)">148</div>
+        <div class="kpi-change up">↑ 12h this week</div>
+      </div>
+      <div class="kpi" style="border-color: rgba(52,211,153,0.2);">
+        <div class="kpi-label">Current Streak</div>
+        <div class="kpi-value" style="color:var(--emerald)">12</div>
+        <div class="kpi-change" style="color:var(--text-dim)">days · best 21</div>
+      </div>
+      <div class="kpi" style="border-color: rgba(251,191,36,0.2);">
+        <div class="kpi-label">XP Earned</div>
+        <div class="kpi-value" style="color:var(--amber)">4.2k</div>
+        <div class="kpi-change up">↑ 340 this week</div>
+      </div>
+    </div>
+
+    <!-- Overview panels -->
+    <div class="overview-grid">
+      <!-- Activity heatmap -->
+      <div class="panel">
+        <div class="panel-title">
+          <div class="panel-title-dot"></div>
+          Weekly Activity
+        </div>
+        <div class="heatmap">
+          <div class="heat-day-label">M</div>
+          <div class="heat-day-label">T</div>
+          <div class="heat-day-label">W</div>
+          <div class="heat-day-label">T</div>
+          <div class="heat-day-label">F</div>
+          <div class="heat-day-label">S</div>
+          <div class="heat-day-label">S</div>
+          <!-- Week 1 -->
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="1"></div>
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="0"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="4"></div>
+          <div class="heat-cell" data-level="1"></div>
+          <!-- Week 2 -->
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="1"></div>
+          <div class="heat-cell" data-level="4"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="1"></div>
+          <!-- Week 3 -->
+          <div class="heat-cell" data-level="1"></div>
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="4"></div>
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <!-- Week 4 (current) -->
+          <div class="heat-cell" data-level="4"></div>
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="4"></div>
+          <div class="heat-cell" data-level="2"></div>
+          <div class="heat-cell" data-level="3"></div>
+          <div class="heat-cell" data-level="0"></div>
+          <div class="heat-cell" data-level="0"></div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;margin-top:8px;">
+          <span style="font-size:0.65rem;color:var(--text-dim)">Less</span>
+          <div class="heat-cell" style="width:10px;height:10px;flex-shrink:0" data-level="0"></div>
+          <div class="heat-cell" style="width:10px;height:10px;flex-shrink:0" data-level="1"></div>
+          <div class="heat-cell" style="width:10px;height:10px;flex-shrink:0" data-level="2"></div>
+          <div class="heat-cell" style="width:10px;height:10px;flex-shrink:0" data-level="3"></div>
+          <div class="heat-cell" style="width:10px;height:10px;flex-shrink:0" data-level="4"></div>
+          <span style="font-size:0.65rem;color:var(--text-dim)">More</span>
+        </div>
+      </div>
+
+      <!-- Achievements -->
+      <div class="panel">
+        <div class="panel-title">
+          <div class="panel-title-dot" style="background:var(--amber)"></div>
+          Recent Achievements
+        </div>
+        <div class="achievement-list">
+          <div class="achievement">
+            <div class="achievement-icon" style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.25)">🔥</div>
+            <div class="achievement-info">
+              <div class="achievement-name">10-Day Streak</div>
+              <div class="achievement-desc">Practiced 10 days straight</div>
+            </div>
+            <div class="achievement-xp">+150 XP</div>
+          </div>
+          <div class="achievement">
+            <div class="achievement-icon" style="background:rgba(99,179,237,0.15);border:1px solid rgba(99,179,237,0.25)">⚡</div>
+            <div class="achievement-info">
+              <div class="achievement-name">Speed Coder</div>
+              <div class="achievement-desc">3h session in Programming</div>
+            </div>
+            <div class="achievement-xp">+100 XP</div>
+          </div>
+          <div class="achievement">
+            <div class="achievement-icon" style="background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.25)">🌱</div>
+            <div class="achievement-info">
+              <div class="achievement-name">New Skill Unlocked</div>
+              <div class="achievement-desc">Started learning Rust</div>
+            </div>
+            <div class="achievement-xp">+50 XP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Type ruler (decorative / design element) -->
+    <div class="type-ruler">
+      <div class="ruler-item"><span class="ruler-label">xs</span>Aa</div>
+      <div class="ruler-item"><span class="ruler-label">sm</span>Aa</div>
+      <div class="ruler-item"><span class="ruler-label">base</span>Aa</div>
+      <div class="ruler-item"><span class="ruler-label">lg</span>Aa</div>
+      <div class="ruler-item"><span class="ruler-label">xl</span>Aa</div>
+      <div class="ruler-item"><span class="ruler-label">2xl</span>Aa</div>
+      <div class="ruler-item"><span class="ruler-label">3xl</span>Aa</div>
+    </div>
+
+    <!-- Skill cards section -->
+    <div class="section-row">
+      <div class="section-title">Skills in Progress</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="filter-row">
+      <div class="chip active">All</div>
+      <div class="chip">Programming</div>
+      <div class="chip">Design</div>
+      <div class="chip">Writing</div>
+      <div class="chip">Music</div>
+      <div class="chip">Language</div>
+    </div>
+
+    <div class="skill-grid">
+
+      <!-- Featured wide card -->
+      <div class="skill-card wide"
+           style="--card-color:rgba(99,179,237,0.06);--card-border:rgba(99,179,237,0.4);
+                  --card-shadow:rgba(99,179,237,0.12);--card-accent:#63b3ed;
+                  --card-accent2:#67e8f9;--card-glow:rgba(99,179,237,0.35);
+                  --card-icon-bg:rgba(99,179,237,0.12);--card-icon-border:rgba(99,179,237,0.25);
+                  --card-level-bg:rgba(99,179,237,0.15);">
+        <div class="wide-inner">
+          <div>
+            <div class="card-top">
+              <div class="card-icon-wrap">🧠</div>
+              <div class="card-meta">
+                <div class="card-level">Advanced</div>
+                <div class="card-xp">4,820 XP</div>
+              </div>
+            </div>
+            <div class="card-name">TypeScript</div>
+            <div class="card-category">Programming · 148 hours total</div>
+            <div class="progress-wrap mt-1">
+              <div class="progress-label">
+                <span>Level 8 progress</span>
+                <span>78%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:78%"></div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="card-last">Last session: 2h ago</div>
+              <div class="card-streak">🔥 12-day streak</div>
+            </div>
+          </div>
+          <div class="wide-chart">
+            <div class="wide-chart-title">7-day activity</div>
+            <div class="activity-bar-row">
+              <div class="activity-day">M</div>
+              <div class="activity-track"><div class="activity-fill" style="width:90%"></div></div>
+              <div class="activity-val">2.7h</div>
+            </div>
+            <div class="activity-bar-row">
+              <div class="activity-day">T</div>
+              <div class="activity-track"><div class="activity-fill" style="width:60%"></div></div>
+              <div class="activity-val">1.8h</div>
+            </div>
+            <div class="activity-bar-row">
+              <div class="activity-day">W</div>
+              <div class="activity-track"><div class="activity-fill" style="width:100%"></div></div>
+              <div class="activity-val">3.0h</div>
+            </div>
+            <div class="activity-bar-row">
+              <div class="activity-day">T</div>
+              <div class="activity-track"><div class="activity-fill" style="width:40%"></div></div>
+              <div class="activity-val">1.2h</div>
+            </div>
+            <div class="activity-bar-row">
+              <div class="activity-day">F</div>
+              <div class="activity-track"><div class="activity-fill" style="width:75%"></div></div>
+              <div class="activity-val">2.2h</div>
+            </div>
+            <div class="activity-bar-row">
+              <div class="activity-day">S</div>
+              <div class="activity-track"><div class="activity-fill" style="width:20%"></div></div>
+              <div class="activity-val">0.6h</div>
+            </div>
+            <div class="activity-bar-row">
+              <div class="activity-day">S</div>
+              <div class="activity-track"><div class="activity-fill" style="width:50%"></div></div>
+              <div class="activity-val">1.5h</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card: Python -->
+      <div class="skill-card"
+           style="--card-color:rgba(99,179,237,0.05);--card-border:rgba(99,179,237,0.35);
+                  --card-shadow:rgba(99,179,237,0.1);--card-accent:#63b3ed;
+                  --card-accent2:#67e8f9;--card-glow:rgba(99,179,237,0.3);
+                  --card-icon-bg:rgba(99,179,237,0.1);--card-icon-border:rgba(99,179,237,0.2);
+                  --card-level-bg:rgba(99,179,237,0.12);">
+        <div class="card-top">
+          <div class="card-icon-wrap">🐍</div>
+          <div class="card-meta">
+            <div class="card-level">Expert</div>
+            <div class="card-xp">8,100 XP</div>
+          </div>
+        </div>
+        <div class="card-name">Python</div>
+        <div class="card-category">Programming</div>
+        <div class="progress-wrap mt-1">
+          <div class="progress-label"><span>Level 12</span><span>91%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:91%"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="card-last">Yesterday</div>
+          <div class="card-streak">🔥 7 days</div>
+        </div>
+      </div>
+
+      <!-- Card: Figma -->
+      <div class="skill-card"
+           style="--card-color:rgba(167,139,250,0.05);--card-border:rgba(167,139,250,0.35);
+                  --card-shadow:rgba(167,139,250,0.1);--card-accent:#a78bfa;
+                  --card-accent2:#c4b5fd;--card-glow:rgba(167,139,250,0.3);
+                  --card-icon-bg:rgba(167,139,250,0.1);--card-icon-border:rgba(167,139,250,0.2);
+                  --card-level-bg:rgba(167,139,250,0.12);">
+        <div class="card-top">
+          <div class="card-icon-wrap">✦</div>
+          <div class="card-meta">
+            <div class="card-level">Intermediate</div>
+            <div class="card-xp">2,400 XP</div>
+          </div>
+        </div>
+        <div class="card-name">UI Design</div>
+        <div class="card-category">Design</div>
+        <div class="progress-wrap mt-1">
+          <div class="progress-label"><span>Level 5</span><span>53%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:53%"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="card-last">3 days ago</div>
+          <div class="card-streak" style="color:var(--text-dim)">— no streak</div>
+        </div>
+      </div>
+
+      <!-- Card: Rust -->
+      <div class="skill-card"
+           style="--card-color:rgba(251,191,36,0.04);--card-border:rgba(251,191,36,0.3);
+                  --card-shadow:rgba(251,191,36,0.08);--card-accent:#fbbf24;
+                  --card-accent2:#fde68a;--card-glow:rgba(251,191,36,0.25);
+                  --card-icon-bg:rgba(251,191,36,0.08);--card-icon-border:rgba(251,191,36,0.18);
+                  --card-level-bg:rgba(251,191,36,0.1);">
+        <div class="card-top">
+          <div class="card-icon-wrap">⚙</div>
+          <div class="card-meta">
+            <div class="card-level">Beginner</div>
+            <div class="card-xp">340 XP</div>
+          </div>
+        </div>
+        <div class="card-name">Rust</div>
+        <div class="card-category">Programming · New!</div>
+        <div class="progress-wrap mt-1">
+          <div class="progress-label"><span>Level 1</span><span>22%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:22%"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="card-last">Today</div>
+          <div class="card-streak">🔥 2 days</div>
+        </div>
+      </div>
+
+      <!-- Card: Spanish -->
+      <div class="skill-card"
+           style="--card-color:rgba(251,113,133,0.04);--card-border:rgba(251,113,133,0.3);
+                  --card-shadow:rgba(251,113,133,0.08);--card-accent:#fb7185;
+                  --card-accent2:#fda4af;--card-glow:rgba(251,113,133,0.25);
+                  --card-icon-bg:rgba(251,113,133,0.08);--card-icon-border:rgba(251,113,133,0.18);
+                  --card-level-bg:rgba(251,113,133,0.1);">
+        <div class="card-top">
+          <div class="card-icon-wrap">🗣</div>
+          <div class="card-meta">
+            <div class="card-level">Intermediate</div>
+            <div class="card-xp">3,100 XP</div>
+          </div>
+        </div>
+        <div class="card-name">Spanish</div>
+        <div class="card-category">Language</div>
+        <div class="progress-wrap mt-1">
+          <div class="progress-label"><span>Level 6</span><span>64%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:64%"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="card-last">2 days ago</div>
+          <div class="card-streak">🔥 5 days</div>
+        </div>
+      </div>
+
+      <!-- Card: Writing -->
+      <div class="skill-card"
+           style="--card-color:rgba(52,211,153,0.04);--card-border:rgba(52,211,153,0.3);
+                  --card-shadow:rgba(52,211,153,0.08);--card-accent:#34d399;
+                  --card-accent2:#6ee7b7;--card-glow:rgba(52,211,153,0.25);
+                  --card-icon-bg:rgba(52,211,153,0.08);--card-icon-border:rgba(52,211,153,0.18);
+                  --card-level-bg:rgba(52,211,153,0.1);">
+        <div class="card-top">
+          <div class="card-icon-wrap">✍</div>
+          <div class="card-meta">
+            <div class="card-level">Intermediate</div>
+            <div class="card-xp">1,880 XP</div>
+          </div>
+        </div>
+        <div class="card-name">Technical Writing</div>
+        <div class="card-category">Writing</div>
+        <div class="progress-wrap mt-1">
+          <div class="progress-label"><span>Level 4</span><span>38%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:38%"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="card-last">4 days ago</div>
+          <div class="card-streak" style="color:var(--text-dim)">— no streak</div>
+        </div>
+      </div>
+
+    </div><!-- /skill-grid -->
+
+  </main><!-- /main -->
+</div><!-- /app -->
+
+</body>
+</html>
